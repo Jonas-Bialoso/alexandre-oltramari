@@ -823,8 +823,16 @@ body[data-section-tone="dark"] .page-nav__dot.is-active { color: var(--color-pri
     text-align: center;
   }
 
-  /* Case-image — keep card overlay, scaled down */
-  .case-image { padding: 16px; }
+  /* Case-image — source photos are landscape; cover with top-bias
+     keeps the subject's face visible on portrait mobile. */
+  .case-image {
+    padding: 16px;
+    background: var(--color-black);
+  }
+  .case-image__bg {
+    object-fit: cover;
+    object-position: center 25%;
+  }
   .case-image__plate {
     padding: 12px;
     gap: 12px;
