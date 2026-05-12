@@ -824,14 +824,21 @@ body[data-section-tone="dark"] .page-nav__dot.is-active { color: var(--color-pri
   }
 
   /* Case-image — source photos are landscape; cover with top-bias
-     keeps the subject's face visible on portrait mobile. */
+     keeps the subject's face visible on portrait mobile.
+     padding-bottom: 80px lifts the plate above browser chrome/nav bar. */
   .case-image {
-    padding: 16px;
+    padding: 16px 16px 80px;
     background: var(--color-black);
+  }
+  /* Extra clearance for devices with a home indicator / notch */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .case-image {
+      padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    }
   }
   .case-image__bg {
     object-fit: cover;
-    object-position: center 25%;
+    object-position: center top;
   }
   .case-image__plate {
     padding: 12px;
