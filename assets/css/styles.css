@@ -1,0 +1,954 @@
+/* =========================================================
+   Alexandre Oltramari — Tokens
+   ========================================================= */
+:root {
+  --color-primary: #957E55;
+  --color-black: #000000;
+  --color-white: #FFFFFF;
+
+  --font-display: "Montserrat", system-ui, sans-serif;
+  --font-body: "Barlow Condensed", system-ui, sans-serif;
+
+  /* Original Figma reference: 1440 × 665. Sections now use full viewport. */
+  --section-px: clamp(24px, 7.78vw, 112px);
+  --content-width: min(800px, 90vw);
+  --carousel-width: min(1216px, 92vw);
+  --video-w: min(600px, 44vw);
+  --video-h: calc(var(--video-w) * 0.5625); /* 16:9 → 337.5/600 */
+
+  --snap-easing: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* =========================================================
+   Reset
+   ========================================================= */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-black);
+  background: var(--color-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img, svg { display: block; max-width: 100%; }
+
+button { font: inherit; }
+
+p, h1, h2, h3, h4, h5, h6 { margin: 0; }
+
+a { color: inherit; text-decoration: none; }
+
+/* =========================================================
+   Page + snap base
+   ========================================================= */
+.page {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Stacking reveal: every section is position:fixed and translated by JS.
+   Sections higher in DOM order get lower z-index — later siblings stack on top
+   so the "next" rises and covers the "current". */
+.snap {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Initial off-screen below; JS lifts section 0 into view on init. */
+  transform: translate3d(0, 100%, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.snap.is-animating { transition: transform 0.95s cubic-bezier(0.65, 0, 0.35, 1); }
+
+.snap[data-enter] > * { will-change: transform, opacity; }
+
+/* =========================================================
+   Hero
+   ========================================================= */
+.hero {
+  background: var(--color-white);
+  padding: 24px 16px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 16px;
+}
+
+/* =========================================================
+   Persistent burger button (top-left, always visible)
+   ========================================================= */
+.burger {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  z-index: 200;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.burger:hover { background: rgba(0, 0, 0, 0.06); }
+.burger:active { transform: scale(0.95); }
+
+.burger img {
+  width: 28px;
+  height: 28px;
+  transition: filter 0.25s ease;
+}
+
+/* On dark sections (case-image), invert the burger icon to stay visible */
+body[data-section-tone="dark"] .burger img { filter: invert(1); }
+body[data-section-tone="dark"] .burger:hover { background: rgba(255, 255, 255, 0.1); }
+
+/* =========================================================
+   Popup menu (sections list)
+   ========================================================= */
+.menu {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0s linear 0.35s;
+}
+
+.menu.is-open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.35s ease, visibility 0s linear 0s;
+}
+
+.menu__close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 48px;
+  height: 48px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: var(--color-white);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.menu__close:hover { background: rgba(255, 255, 255, 0.1); }
+.menu__close:active { transform: scale(0.95); }
+
+.menu__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 16px 24px;
+  text-align: center;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(149, 126, 85, 0.6) transparent;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 32px,
+    #000 calc(100% - 32px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 32px,
+    #000 calc(100% - 32px),
+    transparent 100%
+  );
+}
+
+/* WebKit / Chromium custom scrollbar */
+.menu__nav::-webkit-scrollbar { width: 4px; }
+.menu__nav::-webkit-scrollbar-track { background: transparent; }
+.menu__nav::-webkit-scrollbar-thumb {
+  background: rgba(149, 126, 85, 0.55);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+.menu__nav::-webkit-scrollbar-thumb:hover { background: rgba(149, 126, 85, 0.9); }
+
+.menu__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 16px;
+  background: transparent;
+  border: 0;
+  padding: 8px 20px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  color: rgba(255, 255, 255, 0.7);
+  text-align: left;
+  border-radius: 6px;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.25s ease;
+  opacity: 0;
+  transform: translateY(12px);
+  white-space: nowrap;
+}
+
+.menu.is-open .menu__item {
+  opacity: 1;
+  transform: translateY(0);
+  transition: color 0.2s ease, background 0.2s ease,
+              transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0s),
+              opacity   0.5s ease var(--delay, 0s);
+}
+
+.menu__item:hover {
+  color: var(--color-white);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.menu__item.is-active {
+  color: var(--color-primary);
+}
+
+.menu__index {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+}
+
+.menu__label {
+  font-size: clamp(16px, 1.6vw, 22px);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Hide nav while menu open (avoid overlap with dots) */
+body[data-menu-open="true"] .page-nav { opacity: 0; pointer-events: none; }
+body[data-menu-open="true"] { overflow: hidden; }
+
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* =========================================================
+   Intro (gold full-viewport) — owns the rising gold tab.
+   When intro is at translateY(100%) (off-screen), the tab
+   peeks 32px above the bottom of the viewport, hinting the
+   next section. As intro rises, tab rises with it.
+   overflow:visible so the tab (positioned above intro's top
+   edge) is not clipped by the section box.
+   ========================================================= */
+.intro {
+  background: var(--color-primary);
+  padding: 32px var(--section-px);
+  overflow: visible;
+}
+
+.intro__tab {
+  position: absolute;
+  left: 50%;
+  top: -32px;
+  transform: translateX(-50%);
+  width: clamp(180px, 16.5vw, 237px);
+  height: 32px;
+  background: var(--color-primary);
+  border-top-right-radius: 16px;
+  border-top-left-radius: 16px;
+  z-index: 2;
+}
+
+.intro__text {
+  width: var(--content-width);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(24px, 2.78vw, 40px);
+  line-height: 1.5;
+  text-align: center;
+  color: var(--color-black);
+}
+
+/* =========================================================
+   Case Image (full-viewport bg + plate)
+   ========================================================= */
+.case-image {
+  padding: 32px var(--section-px);
+  justify-content: flex-end;
+}
+
+.case-image__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.case-image__plate {
+  position: relative;
+  z-index: 2;
+  background: var(--color-black);
+  border-top-right-radius: 16px;
+  padding: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 0;
+}
+
+.case-image__logo { height: 56px; width: auto; object-fit: contain; }
+.case-image__logo--tall { height: 72px; }
+
+.case-image__slash { width: 17px; height: 32px; flex-shrink: 0; }
+
+.case-image__tag {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--color-white);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* =========================================================
+   Case Text (white, full-viewport, video grid)
+   ========================================================= */
+.case-text {
+  background: var(--color-white);
+  padding: clamp(48px, 7.78vw, 112px) var(--section-px);
+  gap: clamp(20px, 2.22vw, 32px);
+}
+
+.case-text__title {
+  width: var(--content-width);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(22px, 2.22vw, 32px);
+  line-height: 1.5;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--color-black);
+}
+
+.case-text__carousel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(16px, 1.67vw, 24px);
+  position: relative;
+}
+
+.case-text__viewport {
+  position: relative;
+  width: var(--carousel-width);
+  overflow: visible;
+}
+
+.case-text__track {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  transition: transform 0.5s var(--snap-easing);
+}
+
+.case-text__track--center { justify-content: center; }
+
+.video-card {
+  position: relative;
+  flex: 0 0 var(--video-w);
+  height: var(--video-h);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.video-card__thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.video-card__play {
+  position: relative;
+  z-index: 2;
+  width: 80px;
+  height: 80px;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.35));
+}
+
+.video-card__label {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 16px;
+  letter-spacing: 0.48px;
+  color: var(--color-white);
+  white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(0,0,0,.6);
+}
+
+.case-text__nav {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 5;
+  padding: 0 16px;
+}
+
+.case-text__nav button {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  pointer-events: auto;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.4));
+}
+
+.case-text__nav img { width: 40px; height: 40px; }
+.case-text__nav [data-carousel-prev] img { transform: scaleX(-1); }
+
+.case-text__pagination {
+  display: flex;
+  gap: 4px;
+  height: 8px;
+  justify-content: center;
+}
+
+.case-text__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.case-text__dot.is-active {
+  background: var(--color-black);
+  transform: scale(1.2);
+}
+.case-text__dot:hover { background: rgba(0, 0, 0, 0.55); }
+.case-text__dot.is-active:hover { background: var(--color-black); }
+
+[data-carousel-prev][disabled],
+[data-carousel-next][disabled] {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.case-text__body {
+  width: var(--content-width);
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.4;
+  letter-spacing: 0.48px;
+  color: var(--color-black);
+  text-align: center;
+}
+
+.case-text--single .case-text__viewport {
+  width: var(--video-w);
+}
+
+/* =========================================================
+   Footer
+   ========================================================= */
+.site-footer {
+  background: var(--color-primary);
+  padding: clamp(48px, 7.78vw, 112px) var(--section-px) 32px;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.site-footer__inner {
+  width: var(--content-width);
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  text-align: center;
+}
+
+.site-footer__block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--color-black);
+  align-items: center;
+}
+
+.site-footer__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(20px, 1.67vw, 24px);
+  line-height: 1.3;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.site-footer__text {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(13px, 0.97vw, 14px);
+  line-height: 1.5;
+}
+
+.site-footer__contact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--color-black);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 16px;
+  transition: opacity 0.2s ease;
+}
+
+.site-footer__contact:hover { opacity: 0.7; }
+
+.site-footer__contact img,
+.site-footer__contact svg { width: 24px; height: 24px; display: block; }
+
+/* =========================================================
+   Carousel — functional state (JS toggles --slide-index)
+   ========================================================= */
+.case-text__viewport {
+  --slide-index: 0;
+  --slide-step: calc(var(--video-w) + 16px);
+}
+
+.case-text__track {
+  transform: translateX(calc(-1 * var(--slide-index) * var(--slide-step)));
+  transition: transform 0.6s var(--snap-easing);
+}
+
+/* Allow the right side to bleed beyond the viewport (Figma sliver). */
+.case-text__viewport--bleed {
+  width: calc(var(--carousel-width) + 100px);
+  margin-right: -100px;
+}
+
+/* =========================================================
+   Entrance animations
+   ========================================================= */
+.snap [data-anim] { opacity: 0; will-change: transform, opacity; }
+
+/* When section is the active one (committed) → run anims */
+.snap.is-active [data-anim="card"]      { animation: enterFromBottom 0.6s 0.10s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.snap.is-active [data-anim="left"]      { animation: enterFromLeft 0.55s 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.snap.is-active [data-anim="right"]     { animation: enterFromRight 0.55s 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.snap.is-active [data-anim="static"]    { opacity: 1; animation: none; }
+.snap.is-active [data-anim="fade-up"]   { animation: enterFadeUp 0.7s 0.20s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.snap.is-active [data-anim="fade"]      { animation: enterFade 0.7s 0.20s ease-out forwards; }
+
+@keyframes enterFromBottom {
+  from { opacity: 0; transform: translateY(220%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes enterFromLeft {
+  from { opacity: 0; transform: translateX(-60%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes enterFromRight {
+  from { opacity: 0; transform: translateX(60%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes enterFadeUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes enterFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Inside the case-image plate, the column wrappers must clip the
+   sliding logo and tag without pushing the plate's width. */
+.case-image__plate { overflow: hidden; }
+
+/* =========================================================
+   Lightbox (image + video)
+   ========================================================= */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 32px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.lightbox.is-open {
+  display: flex;
+  opacity: 1;
+}
+
+.lightbox__close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 48px;
+  height: 48px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  color: var(--color-white);
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+.lightbox__close:hover { background: rgba(255,255,255,0.2); }
+
+.lightbox__content {
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox__image {
+  max-width: 100%;
+  max-height: 85vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.lightbox__video {
+  width: min(90vw, 1280px);
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 4px;
+  background: #000;
+}
+
+.video-card,
+.case-image__bg,
+[data-lightbox-image] { cursor: pointer; }
+
+/* =========================================================
+   Side scroll nav — vertical column of dots, one per section
+   ========================================================= */
+/* Side nav: subtle detail. Hidden on hero (data-on-hero on body).
+   Tiny dashes that grow into the active dot. Almost invisible until
+   pointer approaches; then bumps to full opacity. */
+.page-nav {
+  position: fixed;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 6px;
+  pointer-events: auto;
+  opacity: 0.35;
+  transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.page-nav:hover { opacity: 1; }
+
+/* Hidden on the very first section (hero) so it doesn't compete with the logo */
+body[data-on-hero="true"] .page-nav {
+  opacity: 0;
+  transform: translate(20px, -50%);
+  pointer-events: none;
+}
+
+.page-nav__dot {
+  width: 2px;
+  height: 12px;
+  border-radius: 2px;
+  border: 0;
+  padding: 0;
+  background: currentColor;
+  color: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition: width 0.25s ease, height 0.25s ease, color 0.2s ease, background 0.2s ease;
+  position: relative;
+}
+
+.page-nav__dot:hover {
+  color: rgba(0, 0, 0, 0.85);
+  width: 4px;
+}
+
+.page-nav__dot.is-active {
+  color: var(--color-primary);
+  width: 4px;
+  height: 18px;
+}
+
+/* On dark/case-image sections, dots need to be light to stay visible */
+body[data-section-tone="dark"] .page-nav__dot { color: rgba(255, 255, 255, 0.55); }
+body[data-section-tone="dark"] .page-nav__dot:hover { color: rgba(255, 255, 255, 0.9); }
+body[data-section-tone="dark"] .page-nav__dot.is-active { color: var(--color-primary); }
+
+.page-nav__dot[data-label]::after {
+  content: attr(data-label);
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: var(--color-white);
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 5px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.page-nav:hover .page-nav__dot:hover[data-label]::after { opacity: 1; }
+
+/* =========================================================
+   MOBILE (≤ 899px) — Figma mobile spec (375 reference frame).
+   Keeps stacking-reveal: each section is 100vw × 100vh, content
+   sized per Figma mobile. Carousel becomes horizontal swipe.
+   ========================================================= */
+@media (max-width: 899px) {
+  /* Sections remain position:fixed (inherited from base .snap) */
+  .hero { padding: 16px; }
+
+  /* Hero logo — bigger on mobile so it dominates like Figma.
+     The asset has whitespace around the OLT mark; oversize the
+     image (auto width with large height) so the visible logo
+     reads at a useful size. */
+  .hero__bg {
+    position: absolute;
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 150%;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    object-fit: contain;
+  }
+
+  /* Intro */
+  .intro {
+    padding: 32px 16px;
+    justify-content: center;
+  }
+  .intro__text {
+    width: 100%;
+    max-width: 343px;
+    font-size: clamp(20px, 5.6vw, 24px);
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  /* Case-image — keep card overlay, scaled down */
+  .case-image { padding: 16px; }
+  .case-image__plate {
+    padding: 12px;
+    gap: 12px;
+    border-top-right-radius: 12px;
+  }
+  .case-image__logo  { height: 40px !important; width: auto !important; }
+  .case-image__logo--tall { height: 56px !important; }
+  .case-image__slash { width: 12px; height: 24px; }
+  .case-image__tag   { font-size: 14px; }
+
+  /* Case-text — left-aligned content, full-viewport like desktop */
+  .case-text {
+    padding: 24px 16px;
+    gap: 14px;
+    align-items: flex-start;       /* left-align all blocks */
+    justify-content: center;
+  }
+  .case-text__title {
+    width: 100%;
+    max-width: 343px;
+    font-size: 18px;
+    line-height: 1.35;
+    text-align: left;
+  }
+  .case-text__carousel {
+    width: 100%;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  /* Carousel: native horizontal swipe + scroll-snap.
+     viewport stretches to viewport edge; left padding aligns 1st
+     video with the page padding (16px), and the next video peeks
+     past the right edge. */
+  .case-text__viewport {
+    width: 100vw;
+    margin-left: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    overflow-x: auto;
+    overflow-y: visible;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scroll-padding-left: 16px;
+    scrollbar-width: none;
+    --slide-step: 0px;             /* disable JS-driven transform */
+  }
+  .case-text__viewport::-webkit-scrollbar { display: none; }
+  .case-text__track {
+    transform: none !important;
+    transition: none;
+    gap: 8px;
+    padding-right: 16px;
+  }
+  .video-card {
+    flex: 0 0 calc(100vw - 56px);  /* leaves ~40px of next visible */
+    width: calc(100vw - 56px);
+    height: calc((100vw - 56px) * 0.5625); /* 16:9 */
+    scroll-snap-align: start;
+  }
+  .video-card__play { width: 56px; height: 56px; }
+
+  /* Arrows on mobile — smaller, sit inside the section padding */
+  .case-text__nav { padding: 0 4px; }
+  .case-text__nav button { width: 32px; height: 32px; }
+  .case-text__nav img    { width: 32px; height: 32px; }
+
+  /* Pagination aligned to the left, matching the text edge */
+  .case-text__pagination { align-self: flex-start; margin-left: 0; }
+
+  .case-text__body {
+    width: 100%;
+    max-width: 343px;
+    font-size: 13px;
+    text-align: left;
+    line-height: 1.45;
+  }
+
+  /* Single-video case-text — still left aligned on mobile */
+  .case-text--single .case-text__track--center { justify-content: flex-start; }
+  .case-text--single .case-text__viewport      { width: 100vw; }
+
+  /* Footer */
+  .site-footer { padding: 32px 16px; }
+  .site-footer__inner {
+    width: 100%;
+    max-width: 343px;
+    gap: 24px;
+    text-align: left;
+  }
+  .site-footer__block { align-items: flex-start; }
+  .site-footer__title { font-size: 18px; line-height: 1.3; }
+  .site-footer__text  { font-size: 14px; }
+  .site-footer__contact { justify-content: flex-start; }
+
+  /* Hide side scroll nav on mobile (menu burger covers navigation) */
+  .page-nav { display: none; }
+
+  /* Burger smaller margin */
+  .burger { top: 12px; left: 12px; width: 40px; height: 40px; }
+  .burger img { width: 24px; height: 24px; }
+
+  /* Menu popup items can be smaller on mobile */
+  .menu__nav  { padding: 16px 12px; }
+  .menu__item { padding: 6px 12px; gap: 10px; }
+  .menu__label { font-size: 16px; }
+  .menu__index { font-size: 12px; min-width: 28px; }
+}
+
+/* TABLET (900–1199): keep desktop layout but slightly relax padding/scale. */
+@media (min-width: 900px) and (max-width: 1199px) {
+  :root {
+    --section-px: clamp(24px, 5vw, 64px);
+  }
+  .case-image__logo { height: 44px; }
+  .case-image__tag { font-size: 18px; }
+}
+
+/* =========================================================
+   Reduced motion
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .case-text__track { transition: none; }
+  .snap.is-active [data-anim],
+  .snap.in-view [data-anim] { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .lightbox { transition: none; }
+}
