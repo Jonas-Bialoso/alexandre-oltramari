@@ -838,10 +838,9 @@ body[data-section-tone="dark"] .page-nav__dot.is-active { color: var(--color-pri
   }
   .case-image__bg {
     object-fit: cover;
-    /* Default to centered crop — keeps subject roughly in frame for most
-       portrait/landscape photos. Override per-image via inline style if a
-       specific photo needs a different anchor. */
-    object-position: center;
+    /* Default to centered crop. Per-image override: set inline
+       style="--mobile-pos: 30% center" on the <img> to shift anchor. */
+    object-position: var(--mobile-pos, center);
   }
   .case-image__plate {
     padding: 12px;
@@ -925,18 +924,24 @@ body[data-section-tone="dark"] .page-nav__dot.is-active { color: var(--color-pri
   .case-text--single .case-text__track--center { justify-content: flex-start; }
   .case-text--single .case-text__viewport      { width: 100vw; }
 
-  /* Footer */
-  .site-footer { padding: 32px 16px; }
+  /* Footer — Figma mobile: top-aligned with 200px padding-top, tighter
+     gap (24px), small "CONTATO" header right above the WhatsApp row. */
+  .site-footer {
+    padding: 200px 16px 32px;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
   .site-footer__inner {
     width: 100%;
     max-width: 343px;
     gap: 24px;
     text-align: left;
+    align-items: flex-start;
   }
-  .site-footer__block { align-items: flex-start; }
-  .site-footer__title { font-size: 18px; line-height: 1.3; }
-  .site-footer__text  { font-size: 14px; }
-  .site-footer__contact { justify-content: flex-start; }
+  .site-footer__block { align-items: flex-start; gap: 16px; }
+  .site-footer__title { font-size: 22px; line-height: 1.2; }
+  .site-footer__text  { font-size: 14px; line-height: 1.5; }
+  .site-footer__contact { justify-content: flex-start; font-size: 14px; }
 
   /* Hide side scroll nav on mobile (menu burger covers navigation) */
   .page-nav { display: none; }
