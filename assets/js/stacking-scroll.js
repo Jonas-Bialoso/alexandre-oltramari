@@ -11,10 +11,14 @@
 
   /* Stacking reveal runs on every viewport — mobile too. */
   const lastIndex = sections.length - 1;
-  const THRESHOLD = 0.15;       // 15% do viewport pra snap completo
-  const SENSITIVITY = 0.0028;   // wheel delta → progress
-  const TOUCH_SENSITIVITY = 0.0055;
-  const RAF_LERP = 0.18;        // suavização do progresso visual
+  const IS_TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  // Touch precisa ser menos reativo (snap chegava cedo demais) e mais
+  // suave (interpolação visual). Wheel/desktop continua com os valores
+  // originais — desktop não estava brusco.
+  const THRESHOLD = IS_TOUCH ? 0.22 : 0.15;
+  const SENSITIVITY = 0.0028;             // wheel delta → progress
+  const TOUCH_SENSITIVITY = 0.0028;       // ~45% menos reativo que antes
+  const RAF_LERP = IS_TOUCH ? 0.12 : 0.18; // lerp menor = mais suave
 
   let current = 0;
   let progress = 0;             // 0 → 1 (forward), 0 → -1 (backward)

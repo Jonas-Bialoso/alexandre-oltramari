@@ -79,7 +79,7 @@ a { color: inherit; text-decoration: none; }
   backface-visibility: hidden;
 }
 
-.snap.is-animating { transition: transform 0.95s cubic-bezier(0.65, 0, 0.35, 1); }
+.snap.is-animating { transition: transform 0.95s cubic-bezier(0.16, 1, 0.3, 1); }
 
 .snap[data-enter] > * { will-change: transform, opacity; }
 
@@ -601,33 +601,64 @@ body[data-menu-open="true"] { overflow: hidden; }
    ========================================================= */
 .snap [data-anim] { opacity: 0; will-change: transform, opacity; }
 
-/* When section is the active one (committed) → run anims */
-.snap.is-active [data-anim="card"]      { animation: enterFromBottom 0.6s 0.10s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.snap.is-active [data-anim="left"]      { animation: enterFromLeft 0.55s 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.snap.is-active [data-anim="right"]     { animation: enterFromRight 0.55s 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+/* Easing premium: easeOutExpo — começa rápido e desacelera bem suave.
+   Diferença sutil mas perceptível em relação ao cubic-bezier(.22,1,.36,1)
+   anterior, especialmente em mobile. */
+:root { --anim-easing: cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Durações um pouco mais longas + delays sequenciais melhor distribuídos.
+   No mobile, durações maiores ajudam a esconder o "brusco" das anims. */
+.snap.is-active [data-anim="card"]      { animation: enterFromBottom 0.85s 0.08s var(--anim-easing) forwards; }
+.snap.is-active [data-anim="left"]      { animation: enterFromLeft   0.75s 0.55s var(--anim-easing) forwards; }
+.snap.is-active [data-anim="right"]     { animation: enterFromRight  0.75s 0.55s var(--anim-easing) forwards; }
 .snap.is-active [data-anim="static"]    { opacity: 1; animation: none; }
-.snap.is-active [data-anim="fade-up"]   { animation: enterFadeUp 0.7s 0.20s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.snap.is-active [data-anim="fade"]      { animation: enterFade 0.7s 0.20s ease-out forwards; }
+.snap.is-active [data-anim="fade-up"]   { animation: enterFadeUp     0.9s  0.18s var(--anim-easing) forwards; }
+.snap.is-active [data-anim="fade"]      { animation: enterFade       0.85s 0.18s ease-out forwards; }
 
 @keyframes enterFromBottom {
-  from { opacity: 0; transform: translateY(220%); }
+  from { opacity: 0; transform: translateY(180%); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes enterFromLeft {
-  from { opacity: 0; transform: translateX(-60%); }
+  from { opacity: 0; transform: translateX(-50%); }
   to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes enterFromRight {
-  from { opacity: 0; transform: translateX(60%); }
+  from { opacity: 0; transform: translateX(50%); }
   to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes enterFadeUp {
-  from { opacity: 0; transform: translateY(40px); }
+  from { opacity: 0; transform: translateY(32px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes enterFade {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* Mobile: distâncias um pouco menores + durações ligeiramente maiores
+   pra parecer menos brusco em telas pequenas. */
+@media (max-width: 899px) {
+  @keyframes enterFromBottom {
+    from { opacity: 0; transform: translateY(140%); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes enterFromLeft {
+    from { opacity: 0; transform: translateX(-38%); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes enterFromRight {
+    from { opacity: 0; transform: translateX(38%); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes enterFadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .snap.is-active [data-anim="card"]    { animation-duration: 0.95s; }
+  .snap.is-active [data-anim="left"]    { animation-duration: 0.85s; animation-delay: 0.6s; }
+  .snap.is-active [data-anim="right"]   { animation-duration: 0.85s; animation-delay: 0.6s; }
+  .snap.is-active [data-anim="fade-up"] { animation-duration: 1.0s; }
 }
 
 /* Inside the case-image plate, the column wrappers must clip the
