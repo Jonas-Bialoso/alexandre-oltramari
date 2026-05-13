@@ -1,20 +1,46 @@
-/* Stacking reveal scroll — premium curtain effect.
+/* Stacking reveal scroll — premium curtain effect (DESKTOP/TABLET).
  *  - Section atual fica fixa.
  *  - Próxima seção sobe de baixo, cobrindo a atual.
  *  - Durante o scroll, acompanha o gesto suavemente (sem snap brusco).
  *  - Ao passar 30% de viewport de deslocamento, completa a transição.
  *  - Soltando antes dos 30%, volta pra atual.
+ *
+ * Em mobile (<=899px) o efeito é desativado: scroll nativo, seções em
+ * fluxo normal, animações de entrada disparadas por IntersectionObserver.
  */
 (() => {
   const sections = Array.from(document.querySelectorAll('.snap'));
   if (!sections.length) return;
 
-  /* Stacking reveal runs on every viewport — mobile too. */
+  // iOS Safari (Mobile Safari, Chrome iOS, Firefox iOS — todos rodam
+  // WebKit no iOS) tem bugs com position:fixed + transform3d em escala
+  // que quebram o stacking-reveal: sections deslocadas, viewport cortada
+  // pela URL bar, eventos touch perdendo preventDefault. Em vez de
+  // batalhar contra isso, fazemos fallback pra scroll nativo só no iOS.
+  // Android + desktop seguem com o efeito premium.
+  const UA = navigator.userAgent || '';
+  const IS_IOS = /iP(ad|hone|od)/.test(UA) ||
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  if (IS_IOS) {
+    document.body.classList.add('is-ios-fallback');
+    initMobile(sections);
+    return;
+  }
+
   const lastIndex = sections.length - 1;
-  const THRESHOLD = 0.15;       // 15% do viewport pra snap completo
-  const SENSITIVITY = 0.0028;   // wheel delta → progress
-  const TOUCH_SENSITIVITY = 0.0055;
-  const RAF_LERP = 0.18;        // suavização do progresso visual
+  const IS_TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  // No touch, a sensibilidade é normalizada pela altura da viewport:
+  // cada pixel arrastado adiciona 1/altura à `progress`. Com isso, a
+  // THRESHOLD vira literalmente "fração da viewport" — 0.20 = arrastar
+  // 20% da altura da tela pra trocar de seção (independente de iPhone,
+  // Galaxy, tablet, etc).
+  const viewportH = () => Math.max(1, window.innerHeight);
+  const THRESHOLD = IS_TOUCH ? 0.20 : 0.15;
+  const SENSITIVITY = 0.0028;              // wheel delta → progress (desktop)
+  const TOUCH_SENSITIVITY = () => 1 / viewportH(); // 1 progresso por viewport
+  const RAF_LERP = IS_TOUCH ? 0.10 : 0.18; // mobile: lerp ainda mais suave
+  const TOUCH_DEADZONE_PX = 14;            // primeiros pixels do swipe ignorados
 
   let current = 0;
   let progress = 0;             // 0 → 1 (forward), 0 → -1 (backward)
@@ -87,7 +113,9 @@
     if (rafId === null) rafId = requestAnimationFrame(rafLoop);
   }
 
-  const TRANSITION_MS = 950;
+  // Mantém em sincronia com `.snap.is-animating { transition: ... }` no CSS.
+  // No mobile (touch) a cortina é mais lenta (1150ms) — vide media query.
+  const TRANSITION_MS = IS_TOUCH ? 1150 : 950;
 
   function runTransition(el, transform, after) {
     el.classList.add('is-animating');
@@ -287,12 +315,14 @@
   let touchLastY = 0;
   let touchDirection = null; // 'v' | 'h'
   let touchInCarousel = false;
+  let touchPastDeadzone = false; // só conta delta depois do deadzone
 
   window.addEventListener('touchstart', (e) => {
     touchStartY = touchLastY = e.touches[0].clientY;
     touchStartX = e.touches[0].clientX;
     touchDirection = null;
     touchInCarousel = !!e.target.closest('.case-text__viewport');
+    touchPastDeadzone = false;
   }, { passive: true });
 
   window.addEventListener('touchmove', (e) => {
@@ -306,7 +336,7 @@
     if (!touchDirection) {
       const dy0 = Math.abs(y - touchStartY);
       const dx0 = Math.abs(x - touchStartX);
-      if (dy0 < 6 && dx0 < 6) return;
+      if (dy0 < 8 && dx0 < 8) return; // ignore micro-jitter (8px)
       touchDirection = dy0 > dx0 ? 'v' : 'h';
     }
 
@@ -315,9 +345,23 @@
       return;
     }
 
+    // Mobile deadzone: ignore the first ~14px of vertical travel. Quick
+    // taps with slight drift or partial scrolls below this don't trigger
+    // any progress. Once past the threshold, count deltas normally.
+    if (IS_TOUCH && !touchPastDeadzone) {
+      if (Math.abs(y - touchStartY) < TOUCH_DEADZONE_PX) {
+        touchLastY = y; // keep baseline updated so future deltas are correct
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+      touchPastDeadzone = true;
+    }
+
     const dy = touchLastY - y;
     touchLastY = y;
-    addDelta(dy * TOUCH_SENSITIVITY);
+    // Sensitivity = 1 / viewport.height → progress é exatamente "fração da
+    // viewport arrastada". Com THRESHOLD=0.20, são 20% da altura.
+    addDelta(dy * TOUCH_SENSITIVITY());
     if (e.cancelable) e.preventDefault();
   }, { passive: false });
 
@@ -332,5 +376,63 @@
   // Reduced motion: jump instantly
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     sections.forEach(s => { s.style.transition = 'none'; });
+  }
+
+  /* ============================================================
+     MOBILE BRANCH — scroll nativo + IntersectionObserver
+     ============================================================ */
+  function initMobile(sections) {
+    let current = 0;
+    const seen = new Set(); // seções cuja anim de entrada já rodou
+
+    sections.forEach((s, i) => { s.dataset.index = String(i); });
+
+    function activate(idx) {
+      const cur = sections[idx];
+      if (!cur) return;
+      current = idx;
+
+      // Anim de entrada — só na PRIMEIRA aparição da seção. Em visitas
+      // subsequentes apenas mantém `is-active` (sem re-disparar).
+      if (!seen.has(idx)) {
+        seen.add(idx);
+        cur.classList.remove('is-active');
+        void cur.offsetWidth; // reflow força replay
+      }
+      cur.classList.add('is-active');
+
+      document.body.dataset.onHero = cur.classList.contains('hero') ? 'true' : 'false';
+      document.body.dataset.sectionTone = cur.classList.contains('case-image') ? 'dark' : 'light';
+    }
+
+    // Banda de detecção: 20% central da viewport. Quando o meio da seção
+    // cruza, ela vira a "current". rootMargin negativo cria a banda.
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const idx = sections.indexOf(entry.target);
+          if (idx !== current) activate(idx);
+        }
+      });
+    }, {
+      rootMargin: '-40% 0px -40% 0px',
+      threshold: 0
+    });
+
+    sections.forEach(s => observer.observe(s));
+
+    // Estado inicial — primeira seção visível no topo
+    activate(0);
+
+    // Public API usada por menu.js
+    window.OltScroll = {
+      goTo: (idx) => {
+        const target = sections[idx];
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      },
+      getCurrentIndex: () => current,
+      getSectionCount: () => sections.length,
+      getSections: () => sections.slice()
+    };
   }
 })();
