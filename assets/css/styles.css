@@ -79,7 +79,34 @@ a { color: inherit; text-decoration: none; }
   backface-visibility: hidden;
 }
 
-.snap.is-animating { transition: transform 0.95s cubic-bezier(0.65, 0, 0.35, 1); }
+.snap.is-animating { transition: transform 0.95s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* ============================================================
+   iOS fallback — Safari (todos os browsers em iOS rodam WebKit)
+   tem bugs com position:fixed + transform3d sob escala que quebram
+   o stacking-reveal. Pra esses devices, scroll nativo. O JS
+   detecta iOS e adiciona `is-ios-fallback` no <body> (vide
+   stacking-scroll.js → initMobile).
+   ============================================================ */
+body.is-ios-fallback,
+body.is-ios-fallback html { overflow: auto; height: auto; overscroll-behavior: auto; }
+body.is-ios-fallback .snap {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh; /* mais preciso no iOS — exclui URL bar */
+  overflow: hidden;
+  transform: none !important;
+  transition: none !important;
+  will-change: auto;
+  z-index: auto;
+}
+body.is-ios-fallback .snap.is-animating { transition: none !important; }
+/* Side scroll nav já é escondido em mobile via @media (max-width: 899px),
+   mas garantir em iPads landscape (>899px) onde o efeito também quebra. */
+body.is-ios-fallback .page-nav { display: none; }
 
 .snap[data-enter] > * { will-change: transform, opacity; }
 
@@ -601,33 +628,68 @@ body[data-menu-open="true"] { overflow: hidden; }
    ========================================================= */
 .snap [data-anim] { opacity: 0; will-change: transform, opacity; }
 
-/* When section is the active one (committed) → run anims */
-.snap.is-active [data-anim="card"]      { animation: enterFromBottom 0.6s 0.10s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.snap.is-active [data-anim="left"]      { animation: enterFromLeft 0.55s 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.snap.is-active [data-anim="right"]     { animation: enterFromRight 0.55s 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+/* Easing premium: easeOutExpo — começa rápido e desacelera bem suave.
+   Diferença sutil mas perceptível em relação ao cubic-bezier(.22,1,.36,1)
+   anterior, especialmente em mobile. */
+:root { --anim-easing: cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Durações um pouco mais longas + delays sequenciais melhor distribuídos.
+   No mobile, durações maiores ajudam a esconder o "brusco" das anims. */
+.snap.is-active [data-anim="card"]      { animation: enterFromBottom 0.85s 0.08s var(--anim-easing) forwards; }
+.snap.is-active [data-anim="left"]      { animation: enterFromLeft   0.75s 0.55s var(--anim-easing) forwards; }
+.snap.is-active [data-anim="right"]     { animation: enterFromRight  0.75s 0.55s var(--anim-easing) forwards; }
 .snap.is-active [data-anim="static"]    { opacity: 1; animation: none; }
-.snap.is-active [data-anim="fade-up"]   { animation: enterFadeUp 0.7s 0.20s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.snap.is-active [data-anim="fade"]      { animation: enterFade 0.7s 0.20s ease-out forwards; }
+.snap.is-active [data-anim="fade-up"]   { animation: enterFadeUp     0.9s  0.18s var(--anim-easing) forwards; }
+.snap.is-active [data-anim="fade"]      { animation: enterFade       0.85s 0.18s ease-out forwards; }
 
 @keyframes enterFromBottom {
-  from { opacity: 0; transform: translateY(220%); }
+  from { opacity: 0; transform: translateY(180%); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes enterFromLeft {
-  from { opacity: 0; transform: translateX(-60%); }
+  from { opacity: 0; transform: translateX(-50%); }
   to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes enterFromRight {
-  from { opacity: 0; transform: translateX(60%); }
+  from { opacity: 0; transform: translateX(50%); }
   to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes enterFadeUp {
-  from { opacity: 0; transform: translateY(40px); }
+  from { opacity: 0; transform: translateY(32px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes enterFade {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* Mobile: distâncias um pouco menores + durações ligeiramente maiores
+   pra parecer menos brusco em telas pequenas. */
+@media (max-width: 899px) {
+  @keyframes enterFromBottom {
+    from { opacity: 0; transform: translateY(140%); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes enterFromLeft {
+    from { opacity: 0; transform: translateX(-38%); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes enterFromRight {
+    from { opacity: 0; transform: translateX(38%); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes enterFadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .snap.is-active [data-anim="card"]    { animation-duration: 1.15s; animation-delay: 0.12s; }
+  .snap.is-active [data-anim="left"]    { animation-duration: 1.05s; animation-delay: 0.75s; }
+  .snap.is-active [data-anim="right"]   { animation-duration: 1.05s; animation-delay: 0.75s; }
+  .snap.is-active [data-anim="fade-up"] { animation-duration: 1.2s;  animation-delay: 0.25s; }
+  .snap.is-active [data-anim="fade"]    { animation-duration: 1.1s;  animation-delay: 0.25s; }
+  /* Cortina entre seções: 1.15s no mobile (era 0.95s) — desacelera o
+     instante final pra não dar a sensação de "salto". */
+  .snap.is-animating { transition: transform 1.15s cubic-bezier(0.16, 1, 0.3, 1); }
 }
 
 /* Inside the case-image plate, the column wrappers must clip the
@@ -790,7 +852,8 @@ body[data-section-tone="dark"] .page-nav__dot.is-active { color: var(--color-pri
    sized per Figma mobile. Carousel becomes horizontal swipe.
    ========================================================= */
 @media (max-width: 899px) {
-  /* Sections remain position:fixed (inherited from base .snap) */
+  /* Sections remain position:fixed (inherited from base .snap) on
+     Android and other touch devices — stacking-reveal sigue ativo. */
   .hero { padding: 16px; }
 
   /* Hero logo — bigger on mobile so it dominates like Figma.

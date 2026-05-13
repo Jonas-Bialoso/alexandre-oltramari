@@ -76,3 +76,29 @@ alexandre-oltramari/
 - Versão mobile do background do case (mostrar `picture` com source mobile).
 - Carregamento lazy nativo das imagens dos vídeos.
 - Endpoint REST para tornar a homepage consumível por outro front (PWA, app).
+
+## Atualizações via GitHub (Git Updater)
+
+Este tema é distribuído pela branch `theme-dist` do repositório
+[Jonas-Bialoso/alexandre-oltramari](https://github.com/Jonas-Bialoso/alexandre-oltramari).
+Cada novo commit lá vira uma atualização visível no admin do WP.
+
+**Setup único (5 min):**
+
+1. No WP admin → **Plugins → Adicionar novo plugin → Enviar plugin**.
+2. Baixe o **Git Updater** Free de https://github.com/afragen/git-updater/releases (último ZIP).
+3. Instale e ative.
+4. Vá em **Configurações → Git Updater → Settings**.
+   - Se o repositório for público (o caso aqui), não precisa de token. Salve.
+5. Vá em **Configurações → Git Updater → Install Theme**.
+   - URI: `https://github.com/Jonas-Bialoso/alexandre-oltramari`
+   - Branch: `theme-dist`
+   - Clique **Install Theme**.
+6. Pronto. Daqui em diante, toda vez que houver atualização, aparece em
+   **Painel → Atualizações** ou **Aparência → Temas** com botão "Atualizar agora".
+
+**Como funciona internamente:**
+- `style.css` declara `GitHub Theme URI: Jonas-Bialoso/alexandre-oltramari` e `Primary Branch: theme-dist`.
+- Git Updater consulta a API do GitHub periodicamente e compara a versão local com a do repositório.
+- Quando o `Version:` no `style.css` é maior na branch remota, oferece a atualização.
+- O download é o tarball/zip da branch `theme-dist` (a pasta `theme/alexandre-oltramari/` do repo, "achatada" pra raiz).
