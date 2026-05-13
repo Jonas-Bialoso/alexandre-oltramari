@@ -838,7 +838,10 @@ body[data-section-tone="dark"] .page-nav__dot.is-active { color: var(--color-pri
   }
   .case-image__bg {
     object-fit: cover;
-    object-position: center top;
+    /* Default to centered crop — keeps subject roughly in frame for most
+       portrait/landscape photos. Override per-image via inline style if a
+       specific photo needs a different anchor. */
+    object-position: center;
   }
   .case-image__plate {
     padding: 12px;
