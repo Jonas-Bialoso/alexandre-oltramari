@@ -23,6 +23,9 @@
                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   if (IS_IOS) {
+    // Adiciona em html E body — precisa nos dois pra sobrescrever
+    // `html, body { overflow: hidden; height: 100% }` da base.
+    document.documentElement.classList.add('is-ios-fallback');
     document.body.classList.add('is-ios-fallback');
     initMobile(sections);
     return;
