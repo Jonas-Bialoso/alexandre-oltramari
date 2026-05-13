@@ -43,45 +43,91 @@ function olt_image_url( $attachment_id, $size = 'full' ) {
 }
 
 /**
- * Extract YouTube video ID from a URL.
+ * Detect video provider + extract ID from a URL.
  *
- * Accepts: youtu.be/ID, youtube.com/watch?v=ID, /embed/ID, /shorts/ID.
+ * Supports:
+ *  - YouTube: youtu.be/ID, youtube.com/watch?v=ID, /embed/ID, /shorts/ID
+ *  - Vimeo:   vimeo.com/ID, player.vimeo.com/video/ID
  *
- * @param string $url YouTube URL.
- * @return string ID or empty string.
+ * @param string $url Video URL.
+ * @return array { provider: 'youtube'|'vimeo'|'', id: string }
  */
-function olt_youtube_id( $url ) {
+function olt_video_info( $url ) {
+	$empty = array( 'provider' => '', 'id' => '' );
 	if ( empty( $url ) ) {
-		return '';
+		return $empty;
 	}
 	$parsed = wp_parse_url( $url );
 	if ( ! $parsed || empty( $parsed['host'] ) ) {
-		return '';
+		return $empty;
 	}
 	$host = strtolower( $parsed['host'] );
-	$id   = '';
-	if ( false !== strpos( $host, 'youtu.be' ) ) {
-		$id = isset( $parsed['path'] ) ? ltrim( $parsed['path'], '/' ) : '';
-	} elseif ( false !== strpos( $host, 'youtube.com' ) ) {
-		if ( isset( $parsed['query'] ) ) {
-			parse_str( $parsed['query'], $q );
-			$id = isset( $q['v'] ) ? $q['v'] : '';
+
+	// Vimeo.
+	if ( false !== strpos( $host, 'vimeo.com' ) ) {
+		$path = isset( $parsed['path'] ) ? trim( $parsed['path'], '/' ) : '';
+		// player.vimeo.com/video/ID OR vimeo.com/ID.
+		$parts = explode( '/', $path );
+		$id    = '';
+		foreach ( $parts as $p ) {
+			if ( ctype_digit( $p ) ) {
+				$id = $p;
+				break;
+			}
 		}
-		if ( ! $id && isset( $parsed['path'] ) ) {
-			$parts = explode( '/', trim( $parsed['path'], '/' ) );
-			$id    = end( $parts );
+		if ( $id ) {
+			return array( 'provider' => 'vimeo', 'id' => $id );
 		}
 	}
-	return preg_replace( '/[^A-Za-z0-9_-]/', '', (string) $id );
+
+	// YouTube.
+	if ( false !== strpos( $host, 'youtu.be' ) || false !== strpos( $host, 'youtube.com' ) ) {
+		$id = '';
+		if ( false !== strpos( $host, 'youtu.be' ) ) {
+			$id = isset( $parsed['path'] ) ? ltrim( $parsed['path'], '/' ) : '';
+		} else {
+			if ( isset( $parsed['query'] ) ) {
+				parse_str( $parsed['query'], $q );
+				$id = isset( $q['v'] ) ? $q['v'] : '';
+			}
+			if ( ! $id && isset( $parsed['path'] ) ) {
+				$parts = explode( '/', trim( $parsed['path'], '/' ) );
+				$id    = end( $parts );
+			}
+		}
+		$id = preg_replace( '/[^A-Za-z0-9_-]/', '', (string) $id );
+		if ( $id ) {
+			return array( 'provider' => 'youtube', 'id' => $id );
+		}
+	}
+
+	return $empty;
 }
 
 /**
- * Build a YouTube embed URL from any input URL.
+ * Build a player embed URL from a Vimeo/YouTube URL.
  *
- * @param string $url YouTube URL.
+ * @param string $url Original URL.
  * @return string Embed URL or empty.
  */
-function olt_youtube_embed_url( $url ) {
-	$id = olt_youtube_id( $url );
-	return $id ? "https://www.youtube.com/embed/{$id}?autoplay=1" : '';
+function olt_video_embed_url( $url ) {
+	$info = olt_video_info( $url );
+	if ( empty( $info['id'] ) ) {
+		return '';
+	}
+	if ( 'vimeo' === $info['provider'] ) {
+		return "https://player.vimeo.com/video/{$info['id']}?autoplay=1&color=00fff2";
+	}
+	return "https://www.youtube.com/embed/{$info['id']}?autoplay=1&rel=0";
+}
+
+/**
+ * Back-compat alias kept for older templates.
+ *
+ * @param string $url URL.
+ * @return string ID.
+ */
+function olt_youtube_id( $url ) {
+	$info = olt_video_info( $url );
+	return ( 'youtube' === $info['provider'] ) ? $info['id'] : '';
 }

@@ -28,13 +28,15 @@ $body = apply_filters( 'the_content', get_the_content() );
 			<div class="case-text__viewport">
 				<div class="case-text__track<?php echo 1 === $count ? ' case-text__track--center' : ''; ?>">
 					<?php foreach ( $videos as $v ) :
-						$thumb_id  = isset( $v['thumb_id'] ) ? (int) $v['thumb_id'] : 0;
-						$thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'olt-video-thumb' ) : '';
-						$video_url = isset( $v['url'] ) ? (string) $v['url'] : '';
-						$video_id  = olt_youtube_id( $video_url );
-						$label     = isset( $v['label'] ) ? (string) $v['label'] : 'Veja a campanha aqui';
+						$thumb_id   = isset( $v['thumb_id'] ) ? (int) $v['thumb_id'] : 0;
+						$thumb_url  = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'olt-video-thumb' ) : '';
+						$video_url  = isset( $v['url'] ) ? (string) $v['url'] : '';
+						$video_info = olt_video_info( $video_url );
+						$video_id   = $video_info['id'];
+						$provider   = $video_info['provider'];
+						$label      = isset( $v['label'] ) ? (string) $v['label'] : 'Veja a campanha aqui';
 					?>
-						<div class="video-card" data-video="<?php echo esc_attr( $video_id ); ?>">
+						<div class="video-card" data-video="<?php echo esc_attr( $video_id ); ?>"<?php echo $provider ? ' data-video-provider="' . esc_attr( $provider ) . '"' : ''; ?>>
 							<?php if ( $thumb_url ) : ?>
 								<img class="video-card__thumb" src="<?php echo esc_url( $thumb_url ); ?>" alt="">
 							<?php endif; ?>
