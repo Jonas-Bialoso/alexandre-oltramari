@@ -6,7 +6,10 @@
  */
 
 $title    = get_theme_mod( 'olt_footer_title', 'QUEM É ALEXANDRE OLTRAMARI' );
-$bio      = get_theme_mod( 'olt_footer_bio', '' );
+$bio      = get_theme_mod(
+	'olt_footer_bio',
+	'Sou formado em Comunicação pela PUC do Rio Grande do Sul. Fui repórter especial da Folha de S.Paulo e, durante mais de uma década, trabalhei como editor da revista Veja, em Brasília. O mundo mudou – e eu mudei junto. Em 2010, migrei para as áreas de Relações Públicas e Marketing Institucional e Político. Estudei Marketing e Social Media na University of California (UCSD). E hoje, misturando o que aprendi na teoria e na prática, atuo ajudando pessoas, empresas e instituições a contar histórias verdadeiras, impactantes e poderosas.'
+);
 $whatsapp = get_theme_mod( 'olt_footer_whatsapp', '+55 (61) 99966-1000' );
 $wa_link  = get_theme_mod( 'olt_footer_whatsapp_link', 'https://wa.me/5561999661000' );
 ?>
