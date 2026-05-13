@@ -12,13 +12,15 @@
   /* Stacking reveal runs on every viewport — mobile too. */
   const lastIndex = sections.length - 1;
   const IS_TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-  // Touch: bem menos reativo e com threshold mais alto. Desktop intacto.
-  // Pra trocar de seção no mobile o usuário precisa fazer um swipe
-  // deliberado de ~150px (cerca de 1/5 da altura do iPhone) — toques
-  // curtos ou scrolls acidentais não disparam mais.
-  const THRESHOLD = IS_TOUCH ? 0.30 : 0.15;
-  const SENSITIVITY = 0.0028;              // wheel delta → progress
-  const TOUCH_SENSITIVITY = 0.0020;        // ~64% menos reativo que o original
+  // No touch, a sensibilidade é normalizada pela altura da viewport:
+  // cada pixel arrastado adiciona 1/altura à `progress`. Com isso, a
+  // THRESHOLD vira literalmente "fração da viewport" — 0.20 = arrastar
+  // 20% da altura da tela pra trocar de seção (independente de iPhone,
+  // Galaxy, tablet, etc).
+  const viewportH = () => Math.max(1, window.innerHeight);
+  const THRESHOLD = IS_TOUCH ? 0.20 : 0.15;
+  const SENSITIVITY = 0.0028;              // wheel delta → progress (desktop)
+  const TOUCH_SENSITIVITY = () => 1 / viewportH(); // 1 progresso por viewport
   const RAF_LERP = IS_TOUCH ? 0.10 : 0.18; // mobile: lerp ainda mais suave
   const TOUCH_DEADZONE_PX = 14;            // primeiros pixels do swipe ignorados
 
@@ -339,7 +341,9 @@
 
     const dy = touchLastY - y;
     touchLastY = y;
-    addDelta(dy * TOUCH_SENSITIVITY);
+    // Sensitivity = 1 / viewport.height → progress é exatamente "fração da
+    // viewport arrastada". Com THRESHOLD=0.20, são 20% da altura.
+    addDelta(dy * TOUCH_SENSITIVITY());
     if (e.cancelable) e.preventDefault();
   }, { passive: false });
 
