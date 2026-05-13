@@ -12,9 +12,18 @@
   const sections = Array.from(document.querySelectorAll('.snap'));
   if (!sections.length) return;
 
-  const IS_MOBILE = window.matchMedia('(max-width: 899px)').matches;
+  // iOS Safari (Mobile Safari, Chrome iOS, Firefox iOS — todos rodam
+  // WebKit no iOS) tem bugs com position:fixed + transform3d em escala
+  // que quebram o stacking-reveal: sections deslocadas, viewport cortada
+  // pela URL bar, eventos touch perdendo preventDefault. Em vez de
+  // batalhar contra isso, fazemos fallback pra scroll nativo só no iOS.
+  // Android + desktop seguem com o efeito premium.
+  const UA = navigator.userAgent || '';
+  const IS_IOS = /iP(ad|hone|od)/.test(UA) ||
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  if (IS_MOBILE) {
+  if (IS_IOS) {
+    document.body.classList.add('is-ios-fallback');
     initMobile(sections);
     return;
   }

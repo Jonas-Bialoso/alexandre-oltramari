@@ -81,6 +81,33 @@ a { color: inherit; text-decoration: none; }
 
 .snap.is-animating { transition: transform 0.95s cubic-bezier(0.16, 1, 0.3, 1); }
 
+/* ============================================================
+   iOS fallback — Safari (todos os browsers em iOS rodam WebKit)
+   tem bugs com position:fixed + transform3d sob escala que quebram
+   o stacking-reveal. Pra esses devices, scroll nativo. O JS
+   detecta iOS e adiciona `is-ios-fallback` no <body> (vide
+   stacking-scroll.js → initMobile).
+   ============================================================ */
+body.is-ios-fallback,
+body.is-ios-fallback html { overflow: auto; height: auto; overscroll-behavior: auto; }
+body.is-ios-fallback .snap {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh; /* mais preciso no iOS — exclui URL bar */
+  overflow: hidden;
+  transform: none !important;
+  transition: none !important;
+  will-change: auto;
+  z-index: auto;
+}
+body.is-ios-fallback .snap.is-animating { transition: none !important; }
+/* Side scroll nav já é escondido em mobile via @media (max-width: 899px),
+   mas garantir em iPads landscape (>899px) onde o efeito também quebra. */
+body.is-ios-fallback .page-nav { display: none; }
+
 .snap[data-enter] > * { will-change: transform, opacity; }
 
 /* =========================================================
@@ -825,30 +852,8 @@ body[data-section-tone="dark"] .page-nav__dot.is-active { color: var(--color-pri
    sized per Figma mobile. Carousel becomes horizontal swipe.
    ========================================================= */
 @media (max-width: 899px) {
-  /* ============================================================
-     Mobile: stacking-scroll desativado. Scroll nativo, seções em
-     fluxo normal. Animações de entrada são disparadas por
-     IntersectionObserver via JS (vide stacking-scroll.js).
-     ============================================================ */
-  html, body {
-    overflow: auto;
-    height: auto;
-    overscroll-behavior: auto;
-  }
-  .snap {
-    position: relative;
-    inset: auto;
-    width: 100%;
-    height: auto;
-    min-height: 100vh;
-    overflow: hidden; /* mantém pra plates não vazarem */
-    transform: none !important;
-    transition: none !important;
-    will-change: auto;
-    z-index: auto;
-  }
-  .snap.is-animating { transition: none !important; }
-
+  /* Sections remain position:fixed (inherited from base .snap) on
+     Android and other touch devices — stacking-reveal sigue ativo. */
   .hero { padding: 16px; }
 
   /* Hero logo — bigger on mobile so it dominates like Figma.
