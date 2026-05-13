@@ -107,75 +107,76 @@ function olt_case_details_render( $post ) {
 	$mobile_pos     = (string) get_post_meta( $post->ID, '_olt_mobile_pos', true );
 
 	$plate_logo_url = $plate_logo_id ? wp_get_attachment_image_url( $plate_logo_id, 'full' ) : '';
-
 	?>
-	<style>
-		.olt-field { margin: 16px 0; }
-		.olt-field label { display:block; font-weight:600; margin-bottom:4px; }
-		.olt-field input[type="text"],
-		.olt-field input[type="number"],
-		.olt-field textarea { width: 100%; max-width: 600px; }
-		.olt-logo-preview img { max-height: 80px; background: #222; padding: 8px; border-radius: 4px; }
-	</style>
 
-	<p class="olt-field">
-		<label for="olt_plate_tagline"><?php esc_html_e( 'Texto do plate (aparece no card preto, ex: "É daqui pra melhor")', 'alexandre-oltramari' ); ?></label>
-		<input type="text" id="olt_plate_tagline" name="olt_plate_tagline" value="<?php echo esc_attr( $plate_tagline ); ?>" placeholder="Use &lt;br&gt; para quebra de linha">
-		<small><?php esc_html_e( 'Pode incluir &lt;br&gt; para quebra de linha.', 'alexandre-oltramari' ); ?></small>
-	</p>
-
-	<p class="olt-field">
-		<label for="olt_subtitle"><?php esc_html_e( 'Título da seção de texto (h2 acima do carrossel, ex: "O povo venceu de novo")', 'alexandre-oltramari' ); ?></label>
-		<input type="text" id="olt_subtitle" name="olt_subtitle" value="<?php echo esc_attr( $subtitle ); ?>">
-	</p>
-
-	<div class="olt-field">
-		<label><?php esc_html_e( 'Logo da campanha (PNG/SVG com fundo transparente)', 'alexandre-oltramari' ); ?></label>
-		<div class="olt-logo-preview">
-			<?php if ( $plate_logo_url ) : ?>
-				<img src="<?php echo esc_url( $plate_logo_url ); ?>" alt="">
-			<?php endif; ?>
+	<!-- Card 1: Identidade do case -->
+	<div class="olt-card">
+		<div class="olt-card__header">
+			<h3 class="olt-card__title"><?php esc_html_e( 'Identidade do case', 'alexandre-oltramari' ); ?></h3>
+			<span class="olt-card__hint"><?php esc_html_e( 'Aparece no card preto da seção da foto e como título da seção de texto', 'alexandre-oltramari' ); ?></span>
 		</div>
-		<input type="hidden" id="olt_plate_logo_id" name="olt_plate_logo_id" value="<?php echo esc_attr( $plate_logo_id ); ?>">
-		<button type="button" class="button" id="olt-pick-logo"><?php esc_html_e( 'Selecionar imagem', 'alexandre-oltramari' ); ?></button>
-		<button type="button" class="button" id="olt-clear-logo"><?php esc_html_e( 'Remover', 'alexandre-oltramari' ); ?></button>
+		<div class="olt-grid olt-grid--with-preview">
+			<div class="olt-grid">
+				<div class="olt-field">
+					<label for="olt_plate_tagline"><?php esc_html_e( 'Texto do plate (card preto)', 'alexandre-oltramari' ); ?></label>
+					<input type="text" id="olt_plate_tagline" name="olt_plate_tagline" value="<?php echo esc_attr( $plate_tagline ); ?>" placeholder='Ex: É daqui&lt;br&gt;pra melhor'>
+					<span class="olt-field__hint"><?php esc_html_e( 'Use <br> para quebra de linha.', 'alexandre-oltramari' ); ?></span>
+				</div>
+				<div class="olt-field">
+					<label for="olt_subtitle"><?php esc_html_e( 'Título da seção de texto', 'alexandre-oltramari' ); ?></label>
+					<input type="text" id="olt_subtitle" name="olt_subtitle" value="<?php echo esc_attr( $subtitle ); ?>" placeholder="Ex: O povo venceu de novo">
+					<span class="olt-field__hint"><?php esc_html_e( 'H2 que aparece acima do carrossel de vídeos.', 'alexandre-oltramari' ); ?></span>
+				</div>
+			</div>
+			<!-- Live preview -->
+			<aside class="olt-preview-pane">
+				<h3><?php esc_html_e( 'Preview do plate', 'alexandre-oltramari' ); ?></h3>
+				<div class="olt-preview-plate">
+					<img class="olt-preview-plate__logo" src="<?php echo esc_url( $plate_logo_url ); ?>" alt="" style="<?php echo $plate_logo_w ? 'width:' . (int) $plate_logo_w . 'px' : ''; ?>; <?php echo $plate_logo_url ? '' : 'display:none'; ?>">
+					<span class="olt-preview-plate__slash"></span>
+					<p class="olt-preview-plate__tag"><?php echo wp_kses( $plate_tagline, array( 'br' => array() ) ); ?></p>
+				</div>
+				<p class="olt-preview-pane__note"><?php esc_html_e( 'Atualiza enquanto você digita. A versão real do site usa as fontes Montserrat/Barlow.', 'alexandre-oltramari' ); ?></p>
+			</aside>
+		</div>
 	</div>
 
-	<p class="olt-field">
-		<label for="olt_plate_logo_width"><?php esc_html_e( 'Largura do logo em px (ex: 170)', 'alexandre-oltramari' ); ?></label>
-		<input type="number" id="olt_plate_logo_width" name="olt_plate_logo_width" value="<?php echo esc_attr( $plate_logo_w ); ?>" min="40" max="400" step="1">
-	</p>
+	<!-- Card 2: Logo da campanha -->
+	<div class="olt-card">
+		<div class="olt-card__header">
+			<h3 class="olt-card__title"><?php esc_html_e( 'Logo da campanha', 'alexandre-oltramari' ); ?></h3>
+			<span class="olt-card__hint"><?php esc_html_e( 'PNG ou SVG com fundo transparente', 'alexandre-oltramari' ); ?></span>
+		</div>
+		<div class="olt-field olt-field--inline-row">
+			<div class="olt-picker">
+				<div class="olt-picker__preview">
+					<?php if ( $plate_logo_url ) : ?><img src="<?php echo esc_url( $plate_logo_url ); ?>" alt=""><?php endif; ?>
+				</div>
+				<input type="hidden" id="olt_plate_logo_id" name="olt_plate_logo_id" value="<?php echo esc_attr( $plate_logo_id ); ?>">
+				<div class="olt-picker__buttons">
+					<button type="button" class="button" id="olt-pick-logo"><?php esc_html_e( 'Selecionar imagem', 'alexandre-oltramari' ); ?></button>
+					<button type="button" class="button" id="olt-clear-logo"><?php esc_html_e( 'Remover', 'alexandre-oltramari' ); ?></button>
+				</div>
+			</div>
+			<div class="olt-field">
+				<label for="olt_plate_logo_width"><?php esc_html_e( 'Largura (px)', 'alexandre-oltramari' ); ?></label>
+				<input type="number" id="olt_plate_logo_width" name="olt_plate_logo_width" value="<?php echo esc_attr( $plate_logo_w ); ?>" min="40" max="400" step="1" placeholder="170">
+			</div>
+		</div>
+	</div>
 
-	<p class="olt-field">
-		<label for="olt_mobile_pos"><?php esc_html_e( 'object-position no mobile (opcional, ex: "30% center" para deslocar o crop)', 'alexandre-oltramari' ); ?></label>
-		<input type="text" id="olt_mobile_pos" name="olt_mobile_pos" value="<?php echo esc_attr( $mobile_pos ); ?>" placeholder="center">
-	</p>
-
-	<script>
-	(function($){
-		var frame;
-		$('#olt-pick-logo').on('click', function(e){
-			e.preventDefault();
-			if (frame) { frame.open(); return; }
-			frame = wp.media({
-				title: 'Selecionar logo',
-				button: { text: 'Usar este logo' },
-				multiple: false
-			});
-			frame.on('select', function(){
-				var att = frame.state().get('selection').first().toJSON();
-				$('#olt_plate_logo_id').val(att.id);
-				$('.olt-logo-preview').html('<img src="'+att.url+'" alt="">');
-			});
-			frame.open();
-		});
-		$('#olt-clear-logo').on('click', function(e){
-			e.preventDefault();
-			$('#olt_plate_logo_id').val('');
-			$('.olt-logo-preview').empty();
-		});
-	})(jQuery);
-	</script>
+	<!-- Card 3: Imagem de capa (mobile crop) -->
+	<div class="olt-card">
+		<div class="olt-card__header">
+			<h3 class="olt-card__title"><?php esc_html_e( 'Imagem de capa — crop mobile', 'alexandre-oltramari' ); ?></h3>
+			<span class="olt-card__hint"><?php esc_html_e( 'A foto é a "imagem destacada" (lateral direita). Aqui só o ajuste do crop mobile.', 'alexandre-oltramari' ); ?></span>
+		</div>
+		<div class="olt-field">
+			<label for="olt_mobile_pos"><?php esc_html_e( 'object-position no mobile', 'alexandre-oltramari' ); ?></label>
+			<input type="text" id="olt_mobile_pos" name="olt_mobile_pos" value="<?php echo esc_attr( $mobile_pos ); ?>" placeholder="center">
+			<span class="olt-field__hint"><?php esc_html_e( 'Escolha um preset abaixo ou digite valores customizados (ex: "30% 30%"). Só afeta a versão mobile — desktop continua centralizado.', 'alexandre-oltramari' ); ?></span>
+		</div>
+	</div>
 	<?php
 }
 
@@ -189,57 +190,41 @@ function olt_case_videos_render( $post ) {
 	if ( ! is_array( $videos ) ) {
 		$videos = array();
 	}
+	$row_template = olt_render_video_row( '__IDX__', array(), true );
 	?>
-	<p><?php esc_html_e( 'Adicione um vídeo por linha. Deixe a tabela vazia para esconder o carrossel.', 'alexandre-oltramari' ); ?></p>
-	<table class="widefat striped" id="olt-videos">
-		<thead>
-			<tr>
-				<th style="width:120px"><?php esc_html_e( 'Thumb', 'alexandre-oltramari' ); ?></th>
-				<th><?php esc_html_e( 'URL do vídeo (YouTube)', 'alexandre-oltramari' ); ?></th>
-				<th><?php esc_html_e( 'Rótulo', 'alexandre-oltramari' ); ?></th>
-				<th style="width:60px"></th>
-			</tr>
-		</thead>
-		<tbody>
-			<?php
-			if ( $videos ) {
-				foreach ( $videos as $i => $v ) {
-					olt_render_video_row( $i, $v );
+	<div class="olt-card">
+		<div class="olt-card__header">
+			<h3 class="olt-card__title"><?php esc_html_e( 'Vídeos do carrossel', 'alexandre-oltramari' ); ?></h3>
+			<span class="olt-card__hint"><?php esc_html_e( 'Arraste pela alça à esquerda pra reordenar. Tabela vazia esconde o carrossel.', 'alexandre-oltramari' ); ?></span>
+		</div>
+	</div>
+	<div class="olt-videos-wrap">
+		<table class="olt-videos" id="olt-videos">
+			<thead>
+				<tr>
+					<th></th>
+					<th><?php esc_html_e( 'Thumb', 'alexandre-oltramari' ); ?></th>
+					<th><?php esc_html_e( 'URL do vídeo (YouTube ou Vimeo)', 'alexandre-oltramari' ); ?></th>
+					<th><?php esc_html_e( 'Rótulo do botão', 'alexandre-oltramari' ); ?></th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php
+				if ( $videos ) {
+					foreach ( $videos as $i => $v ) {
+						olt_render_video_row( $i, $v );
+					}
+				} else {
+					olt_render_video_row( 0, array() );
 				}
-			} else {
-				olt_render_video_row( 0, array() );
-			}
-			?>
-		</tbody>
-	</table>
-	<p>
-		<button type="button" class="button" id="olt-add-video"><?php esc_html_e( '+ adicionar vídeo', 'alexandre-oltramari' ); ?></button>
-	</p>
+				?>
+			</tbody>
+		</table>
+		<button type="button" class="button olt-videos__add" id="olt-add-video"><?php esc_html_e( '+ adicionar vídeo', 'alexandre-oltramari' ); ?></button>
+	</div>
 	<script>
-	(function($){
-		var idx = <?php echo (int) max( 1, count( $videos ) ); ?>;
-		$('#olt-add-video').on('click', function(e){
-			e.preventDefault();
-			var html = <?php echo wp_json_encode( olt_render_video_row( '__IDX__', array(), true ) ); ?>.replace(/__IDX__/g, idx);
-			$('#olt-videos tbody').append(html);
-			idx++;
-		});
-		$('#olt-videos').on('click', '.olt-pick-thumb', function(e){
-			e.preventDefault();
-			var $btn = $(this);
-			var frame = wp.media({ title: 'Thumb do vídeo', multiple: false });
-			frame.on('select', function(){
-				var att = frame.state().get('selection').first().toJSON();
-				$btn.siblings('input.olt-thumb-id').val(att.id);
-				$btn.siblings('.olt-thumb-preview').html('<img src="'+att.url+'" style="max-width:100px;max-height:60px">');
-			});
-			frame.open();
-		});
-		$('#olt-videos').on('click', '.olt-remove-video', function(e){
-			e.preventDefault();
-			$(this).closest('tr').remove();
-		});
-	})(jQuery);
+		window.OLT_VIDEO_ROW_TEMPLATE = <?php echo wp_json_encode( $row_template ); ?>;
 	</script>
 	<?php
 }
@@ -257,27 +242,35 @@ function olt_render_video_row( $i, $v, $return = false ) {
 	$thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'olt-video-thumb' ) : '';
 	$url       = isset( $v['url'] ) ? (string) $v['url'] : '';
 	$label     = isset( $v['label'] ) ? (string) $v['label'] : 'Veja a campanha aqui';
+	$provider  = '';
+	if ( false !== strpos( $url, 'vimeo.com' ) ) {
+		$provider = 'vimeo';
+	} elseif ( false !== strpos( $url, 'youtu' ) ) {
+		$provider = 'youtube';
+	}
 
 	ob_start();
 	?>
 	<tr>
-		<td>
-			<div class="olt-thumb-preview">
-				<?php if ( $thumb_url ) : ?>
-					<img src="<?php echo esc_url( $thumb_url ); ?>" style="max-width:100px;max-height:60px">
-				<?php endif; ?>
+		<td class="olt-videos__drag" title="Arraste pra reordenar">⋮⋮</td>
+		<td class="olt-videos__thumb">
+			<div class="olt-picker">
+				<div class="olt-picker__preview">
+					<?php if ( $thumb_url ) : ?><img src="<?php echo esc_url( $thumb_url ); ?>" alt=""><?php endif; ?>
+				</div>
+				<input type="hidden" class="olt-thumb-id" name="olt_videos[<?php echo esc_attr( $i ); ?>][thumb_id]" value="<?php echo esc_attr( $thumb_id ); ?>">
+				<button type="button" class="button button-small olt-pick-thumb"><?php esc_html_e( 'Selecionar', 'alexandre-oltramari' ); ?></button>
 			</div>
-			<input type="hidden" class="olt-thumb-id" name="olt_videos[<?php echo esc_attr( $i ); ?>][thumb_id]" value="<?php echo esc_attr( $thumb_id ); ?>">
-			<button type="button" class="button olt-pick-thumb"><?php esc_html_e( 'Selecionar', 'alexandre-oltramari' ); ?></button>
 		</td>
 		<td>
-			<input type="url" name="olt_videos[<?php echo esc_attr( $i ); ?>][url]" value="<?php echo esc_attr( $url ); ?>" placeholder="https://www.youtube.com/watch?v=..." style="width:100%">
+			<input type="url" class="olt-videos__url" name="olt_videos[<?php echo esc_attr( $i ); ?>][url]" value="<?php echo esc_attr( $url ); ?>" placeholder="https://vimeo.com/... ou https://youtube.com/...">
+			<span class="olt-videos__provider <?php echo $provider ? 'olt-videos__provider--' . esc_attr( $provider ) : ''; ?>" <?php echo $provider ? '' : 'style="display:none"'; ?>><?php echo esc_html( $provider ); ?></span>
 		</td>
 		<td>
-			<input type="text" name="olt_videos[<?php echo esc_attr( $i ); ?>][label]" value="<?php echo esc_attr( $label ); ?>" placeholder="Veja a campanha aqui" style="width:100%">
+			<input type="text" name="olt_videos[<?php echo esc_attr( $i ); ?>][label]" value="<?php echo esc_attr( $label ); ?>" placeholder="Veja a campanha aqui">
 		</td>
 		<td>
-			<button type="button" class="button button-link-delete olt-remove-video">×</button>
+			<button type="button" class="olt-videos__remove" title="Remover vídeo">×</button>
 		</td>
 	</tr>
 	<?php
@@ -344,12 +337,121 @@ function olt_case_save( $post_id ) {
 add_action( 'save_post_olt_case', 'olt_case_save' );
 
 /**
- * Enqueue media uploader on Case edit screen.
+ * Enqueue admin assets on Case edit screen and Cases list + Tools/OLT seed.
  */
 function olt_case_admin_assets( $hook ) {
 	global $post;
-	if ( ( 'post.php' === $hook || 'post-new.php' === $hook ) && isset( $post->post_type ) && 'olt_case' === $post->post_type ) {
+	$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+	$is_case_edit = in_array( $hook, array( 'post.php', 'post-new.php' ), true )
+		&& isset( $post->post_type ) && 'olt_case' === $post->post_type;
+	$is_case_list = $screen && 'edit-olt_case' === $screen->id;
+	$is_seeder    = $screen && false !== strpos( $screen->id, 'olt-seed' );
+
+	if ( ! $is_case_edit && ! $is_case_list && ! $is_seeder ) {
+		return;
+	}
+
+	wp_enqueue_style(
+		'olt-admin',
+		OLT_THEME_URI . '/assets/css/admin.css',
+		array(),
+		OLT_THEME_VERSION
+	);
+
+	if ( $is_case_edit ) {
 		wp_enqueue_media();
+		wp_enqueue_script( 'jquery-ui-sortable' );
+		wp_enqueue_script(
+			'olt-admin-case',
+			OLT_THEME_URI . '/assets/js/admin-case.js',
+			array( 'jquery', 'jquery-ui-sortable' ),
+			OLT_THEME_VERSION,
+			true
+		);
 	}
 }
 add_action( 'admin_enqueue_scripts', 'olt_case_admin_assets' );
+
+/* ============================================================
+   Admin list columns — Cases archive view
+   ============================================================ */
+
+/**
+ * Register custom columns for the Cases list.
+ *
+ * @param array $columns Default columns.
+ * @return array
+ */
+function olt_case_columns( $columns ) {
+	$new = array();
+	foreach ( $columns as $key => $label ) {
+		if ( 'title' === $key ) {
+			$new['olt_thumb'] = __( 'Capa', 'alexandre-oltramari' );
+			$new[ $key ]       = $label;
+			$new['olt_plate']  = __( 'Plate', 'alexandre-oltramari' );
+			$new['olt_videos'] = __( 'Vídeos', 'alexandre-oltramari' );
+			$new['olt_status'] = __( 'Status', 'alexandre-oltramari' );
+		} else {
+			$new[ $key ] = $label;
+		}
+	}
+	return $new;
+}
+add_filter( 'manage_olt_case_posts_columns', 'olt_case_columns' );
+
+/**
+ * Render custom column content.
+ *
+ * @param string $column  Column key.
+ * @param int    $post_id Post ID.
+ */
+function olt_case_column_content( $column, $post_id ) {
+	switch ( $column ) {
+		case 'olt_thumb':
+			$thumb = get_the_post_thumbnail_url( $post_id, 'olt-video-thumb' );
+			if ( $thumb ) {
+				echo '<img src="' . esc_url( $thumb ) . '" alt="">';
+			} else {
+				echo '<div class="column-olt_thumb__none">sem capa</div>';
+			}
+			break;
+
+		case 'olt_plate':
+			$tagline = (string) get_post_meta( $post_id, '_olt_plate_tagline', true );
+			$logo_id = (int) get_post_meta( $post_id, '_olt_plate_logo_id', true );
+			$clean   = strip_tags( str_replace( '<br>', ' / ', $tagline ) );
+			echo '<strong>' . esc_html( $clean ?: '—' ) . '</strong>';
+			if ( $logo_id ) {
+				echo '<span style="color:#2da34a">✓ logo</span>';
+			} else {
+				echo '<span style="color:#d63638">⚠ sem logo</span>';
+			}
+			break;
+
+		case 'olt_videos':
+			$videos = get_post_meta( $post_id, '_olt_videos', true );
+			$count  = is_array( $videos ) ? count( $videos ) : 0;
+			$class  = $count > 0 ? 'badge--ok' : 'badge--warn';
+			echo '<span class="badge ' . esc_attr( $class ) . '">' . (int) $count . '</span>';
+			break;
+
+		case 'olt_status':
+			$has_thumb   = (bool) get_post_thumbnail_id( $post_id );
+			$has_logo    = (bool) get_post_meta( $post_id, '_olt_plate_logo_id', true );
+			$has_tagline = (bool) get_post_meta( $post_id, '_olt_plate_tagline', true );
+			$videos      = get_post_meta( $post_id, '_olt_videos', true );
+			$videos_ok   = is_array( $videos ) && count( $videos ) > 0;
+
+			$score = (int) $has_thumb + (int) $has_logo + (int) $has_tagline + (int) $videos_ok;
+			if ( 4 === $score ) {
+				echo '<span class="olt-status-dot olt-status-dot--ok"></span>Completo';
+			} elseif ( $score >= 2 ) {
+				echo '<span class="olt-status-dot olt-status-dot--warn"></span>Faltam itens';
+			} else {
+				echo '<span class="olt-status-dot olt-status-dot--bad"></span>Vazio';
+			}
+			break;
+	}
+}
+add_action( 'manage_olt_case_posts_custom_column', 'olt_case_column_content', 10, 2 );
