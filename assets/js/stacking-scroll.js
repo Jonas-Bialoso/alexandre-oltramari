@@ -1,15 +1,24 @@
-/* Stacking reveal scroll — premium curtain effect.
+/* Stacking reveal scroll — premium curtain effect (DESKTOP/TABLET).
  *  - Section atual fica fixa.
  *  - Próxima seção sobe de baixo, cobrindo a atual.
  *  - Durante o scroll, acompanha o gesto suavemente (sem snap brusco).
  *  - Ao passar 30% de viewport de deslocamento, completa a transição.
  *  - Soltando antes dos 30%, volta pra atual.
+ *
+ * Em mobile (<=899px) o efeito é desativado: scroll nativo, seções em
+ * fluxo normal, animações de entrada disparadas por IntersectionObserver.
  */
 (() => {
   const sections = Array.from(document.querySelectorAll('.snap'));
   if (!sections.length) return;
 
-  /* Stacking reveal runs on every viewport — mobile too. */
+  const IS_MOBILE = window.matchMedia('(max-width: 899px)').matches;
+
+  if (IS_MOBILE) {
+    initMobile(sections);
+    return;
+  }
+
   const lastIndex = sections.length - 1;
   const IS_TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
   // No touch, a sensibilidade é normalizada pela altura da viewport:
@@ -358,5 +367,63 @@
   // Reduced motion: jump instantly
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     sections.forEach(s => { s.style.transition = 'none'; });
+  }
+
+  /* ============================================================
+     MOBILE BRANCH — scroll nativo + IntersectionObserver
+     ============================================================ */
+  function initMobile(sections) {
+    let current = 0;
+    const seen = new Set(); // seções cuja anim de entrada já rodou
+
+    sections.forEach((s, i) => { s.dataset.index = String(i); });
+
+    function activate(idx) {
+      const cur = sections[idx];
+      if (!cur) return;
+      current = idx;
+
+      // Anim de entrada — só na PRIMEIRA aparição da seção. Em visitas
+      // subsequentes apenas mantém `is-active` (sem re-disparar).
+      if (!seen.has(idx)) {
+        seen.add(idx);
+        cur.classList.remove('is-active');
+        void cur.offsetWidth; // reflow força replay
+      }
+      cur.classList.add('is-active');
+
+      document.body.dataset.onHero = cur.classList.contains('hero') ? 'true' : 'false';
+      document.body.dataset.sectionTone = cur.classList.contains('case-image') ? 'dark' : 'light';
+    }
+
+    // Banda de detecção: 20% central da viewport. Quando o meio da seção
+    // cruza, ela vira a "current". rootMargin negativo cria a banda.
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const idx = sections.indexOf(entry.target);
+          if (idx !== current) activate(idx);
+        }
+      });
+    }, {
+      rootMargin: '-40% 0px -40% 0px',
+      threshold: 0
+    });
+
+    sections.forEach(s => observer.observe(s));
+
+    // Estado inicial — primeira seção visível no topo
+    activate(0);
+
+    // Public API usada por menu.js
+    window.OltScroll = {
+      goTo: (idx) => {
+        const target = sections[idx];
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      },
+      getCurrentIndex: () => current,
+      getSectionCount: () => sections.length,
+      getSections: () => sections.slice()
+    };
   }
 })();

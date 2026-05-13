@@ -825,7 +825,30 @@ body[data-section-tone="dark"] .page-nav__dot.is-active { color: var(--color-pri
    sized per Figma mobile. Carousel becomes horizontal swipe.
    ========================================================= */
 @media (max-width: 899px) {
-  /* Sections remain position:fixed (inherited from base .snap) */
+  /* ============================================================
+     Mobile: stacking-scroll desativado. Scroll nativo, seções em
+     fluxo normal. Animações de entrada são disparadas por
+     IntersectionObserver via JS (vide stacking-scroll.js).
+     ============================================================ */
+  html, body {
+    overflow: auto;
+    height: auto;
+    overscroll-behavior: auto;
+  }
+  .snap {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    min-height: 100vh;
+    overflow: hidden; /* mantém pra plates não vazarem */
+    transform: none !important;
+    transition: none !important;
+    will-change: auto;
+    z-index: auto;
+  }
+  .snap.is-animating { transition: none !important; }
+
   .hero { padding: 16px; }
 
   /* Hero logo — bigger on mobile so it dominates like Figma.
