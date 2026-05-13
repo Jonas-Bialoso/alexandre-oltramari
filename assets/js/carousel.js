@@ -46,7 +46,10 @@
     function update() {
       const pages = pageCount();
       if (!MOBILE()) {
-        viewport.style.setProperty('--slide-index', String(index));
+        // CSS shifts the track by --slide-index * --slide-step, where
+        // --slide-step is the width of ONE video card + gap. To advance a
+        // full page (perPageDesktop cards) per arrow click, multiply.
+        viewport.style.setProperty('--slide-index', String(index * perPageDesktop));
       } else {
         // Mobile uses native scroll — programmatic scroll on arrow click.
       }
