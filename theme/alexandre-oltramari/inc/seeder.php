@@ -36,36 +36,51 @@ function olt_seed_page() {
 	}
 	$done = get_option( 'olt_seed_done' );
 	?>
-	<div class="wrap">
-		<h1>OLT — Importar cases iniciais</h1>
-		<?php if ( $done ) : ?>
-			<p>✔ Seed já executado em <?php echo esc_html( $done ); ?>. Para rodar novamente, apague a option <code>olt_seed_done</code>.</p>
-		<?php endif; ?>
+	<div class="wrap olt-seeder-page">
+		<h1><?php esc_html_e( 'OLT — Importar cases iniciais', 'alexandre-oltramari' ); ?></h1>
 
 		<?php
 		if ( isset( $_POST['olt_seed_run'] ) && check_admin_referer( 'olt_seed' ) ) {
 			$result = olt_seed_run();
-			echo '<div class="notice notice-success"><p>' . esc_html( sprintf(
-				'%d cases criados · %d atualizados · %d imagens importadas · página inicial: %s',
-				(int) $result['created'],
-				(int) $result['updated'],
-				(int) $result['images'],
-				$result['home_page'] ? 'configurada' : 'não alterada'
-			) ) . '</p></div>';
+			?>
+			<div class="olt-seeder-result">
+				<strong><?php esc_html_e( 'Seed concluído!', 'alexandre-oltramari' ); ?></strong>
+				<ul style="margin: 8px 0 0; line-height: 1.6;">
+					<li><?php echo esc_html( sprintf( '%d cases criados', (int) $result['created'] ) ); ?></li>
+					<li><?php echo esc_html( sprintf( '%d cases atualizados (vídeos sincronizados)', (int) $result['updated'] ) ); ?></li>
+					<li><?php echo esc_html( sprintf( '%d imagens importadas pra Biblioteca de Mídia', (int) $result['images'] ) ); ?></li>
+					<li><?php echo esc_html( $result['home_page'] ? 'Página inicial: configurada ✓' : 'Página inicial: não alterada' ); ?></li>
+				</ul>
+				<p style="margin-top: 12px;">
+					<a href="<?php echo esc_url( home_url() ); ?>" class="button button-secondary" target="_blank"><?php esc_html_e( 'Abrir site', 'alexandre-oltramari' ); ?></a>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=olt_case' ) ); ?>" class="button button-secondary"><?php esc_html_e( 'Ver cases', 'alexandre-oltramari' ); ?></a>
+				</p>
+			</div>
+			<?php
 		}
 		?>
 
-		<form method="post">
-			<?php wp_nonce_field( 'olt_seed' ); ?>
-			<p>Setup completo em 1 clique:</p>
-			<ul style="list-style: disc inside; line-height: 1.6;">
-				<li>Cria os 9 cases com textos, plates, subtítulos e URLs do Vimeo</li>
-				<li>Importa todas as imagens de <code>assets/images/</code> pra Biblioteca de Mídia</li>
-				<li>Anexa featured image (sec*-bg.webp), logos (sec*-logo.webp) e thumbs dos vídeos automaticamente em cada case</li>
-				<li>Cria a página "Home" e configura como página inicial</li>
+		<div class="olt-seeder-card">
+			<h2><?php esc_html_e( 'Setup completo em 1 clique', 'alexandre-oltramari' ); ?></h2>
+			<p><?php esc_html_e( 'Esse script faz toda a configuração inicial do site automaticamente:', 'alexandre-oltramari' ); ?></p>
+			<ul class="olt-seeder-steps">
+				<li><?php esc_html_e( 'Cria os 9 cases com textos, plates, subtítulos e URLs do Vimeo', 'alexandre-oltramari' ); ?></li>
+				<li><?php esc_html_e( 'Importa todas as imagens (38 arquivos .webp) pra Biblioteca de Mídia', 'alexandre-oltramari' ); ?></li>
+				<li><?php esc_html_e( 'Anexa capa, logo e thumbs dos vídeos em cada case automaticamente', 'alexandre-oltramari' ); ?></li>
+				<li><?php esc_html_e( 'Cria a página "Home" e configura como página inicial do site', 'alexandre-oltramari' ); ?></li>
 			</ul>
-			<p><button class="button button-primary" name="olt_seed_run" value="1">Rodar seed completo</button></p>
-		</form>
+
+			<?php if ( $done ) : ?>
+				<p style="background:#fcf0e0;border-left:4px solid #dba617;padding:10px 14px;border-radius:4px;margin:16px 0;">
+					<strong>ℹ️ Seed já foi executado anteriormente</strong> em <?php echo esc_html( $done ); ?>. Rodar de novo é seguro — cases existentes serão atualizados (vídeos resincronizados), imagens não serão duplicadas.
+				</p>
+			<?php endif; ?>
+
+			<form method="post" style="margin-top: 20px;">
+				<?php wp_nonce_field( 'olt_seed' ); ?>
+				<button class="button button-primary button-hero" name="olt_seed_run" value="1"><?php echo $done ? '🔄 ' . esc_html__( 'Rodar seed novamente', 'alexandre-oltramari' ) : '🚀 ' . esc_html__( 'Rodar seed completo', 'alexandre-oltramari' ); ?></button>
+			</form>
+		</div>
 	</div>
 	<?php
 }
