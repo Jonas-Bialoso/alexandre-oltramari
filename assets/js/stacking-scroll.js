@@ -12,13 +12,15 @@
   /* Stacking reveal runs on every viewport — mobile too. */
   const lastIndex = sections.length - 1;
   const IS_TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-  // Touch precisa ser menos reativo (snap chegava cedo demais) e mais
-  // suave (interpolação visual). Wheel/desktop continua com os valores
-  // originais — desktop não estava brusco.
-  const THRESHOLD = IS_TOUCH ? 0.22 : 0.15;
-  const SENSITIVITY = 0.0028;             // wheel delta → progress
-  const TOUCH_SENSITIVITY = 0.0028;       // ~45% menos reativo que antes
-  const RAF_LERP = IS_TOUCH ? 0.12 : 0.18; // lerp menor = mais suave
+  // Touch: bem menos reativo e com threshold mais alto. Desktop intacto.
+  // Pra trocar de seção no mobile o usuário precisa fazer um swipe
+  // deliberado de ~150px (cerca de 1/5 da altura do iPhone) — toques
+  // curtos ou scrolls acidentais não disparam mais.
+  const THRESHOLD = IS_TOUCH ? 0.30 : 0.15;
+  const SENSITIVITY = 0.0028;              // wheel delta → progress
+  const TOUCH_SENSITIVITY = 0.0020;        // ~64% menos reativo que o original
+  const RAF_LERP = IS_TOUCH ? 0.10 : 0.18; // mobile: lerp ainda mais suave
+  const TOUCH_DEADZONE_PX = 14;            // primeiros pixels do swipe ignorados
 
   let current = 0;
   let progress = 0;             // 0 → 1 (forward), 0 → -1 (backward)
@@ -91,7 +93,9 @@
     if (rafId === null) rafId = requestAnimationFrame(rafLoop);
   }
 
-  const TRANSITION_MS = 950;
+  // Mantém em sincronia com `.snap.is-animating { transition: ... }` no CSS.
+  // No mobile (touch) a cortina é mais lenta (1150ms) — vide media query.
+  const TRANSITION_MS = IS_TOUCH ? 1150 : 950;
 
   function runTransition(el, transform, after) {
     el.classList.add('is-animating');
@@ -291,12 +295,14 @@
   let touchLastY = 0;
   let touchDirection = null; // 'v' | 'h'
   let touchInCarousel = false;
+  let touchPastDeadzone = false; // só conta delta depois do deadzone
 
   window.addEventListener('touchstart', (e) => {
     touchStartY = touchLastY = e.touches[0].clientY;
     touchStartX = e.touches[0].clientX;
     touchDirection = null;
     touchInCarousel = !!e.target.closest('.case-text__viewport');
+    touchPastDeadzone = false;
   }, { passive: true });
 
   window.addEventListener('touchmove', (e) => {
@@ -310,13 +316,25 @@
     if (!touchDirection) {
       const dy0 = Math.abs(y - touchStartY);
       const dx0 = Math.abs(x - touchStartX);
-      if (dy0 < 6 && dx0 < 6) return;
+      if (dy0 < 8 && dx0 < 8) return; // ignore micro-jitter (8px)
       touchDirection = dy0 > dx0 ? 'v' : 'h';
     }
 
     if (touchDirection === 'h' && touchInCarousel) {
       // Let native horizontal scroll handle it
       return;
+    }
+
+    // Mobile deadzone: ignore the first ~14px of vertical travel. Quick
+    // taps with slight drift or partial scrolls below this don't trigger
+    // any progress. Once past the threshold, count deltas normally.
+    if (IS_TOUCH && !touchPastDeadzone) {
+      if (Math.abs(y - touchStartY) < TOUCH_DEADZONE_PX) {
+        touchLastY = y; // keep baseline updated so future deltas are correct
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+      touchPastDeadzone = true;
     }
 
     const dy = touchLastY - y;
