@@ -21,17 +21,26 @@
       'site-footer': 'Quem é Alexandre'
     };
 
+    // Build a filtered list: only "main" sections appear in the menu.
+    // case-text sections collapse into their preceding case-image entry
+    // (clicking still navigates to the case-image — the photo plate).
+    const entries = [];
     sections.forEach((sec, i) => {
+      if (sec.classList.contains('case-text')) return; // skip — merged into prev case-image
+      entries.push({ sec, sectionIndex: i });
+    });
+
+    entries.forEach(({ sec, sectionIndex }, displayIdx) => {
       const item = document.createElement('button');
       item.className = 'menu__item';
-      item.dataset.index = String(i);
-      item.style.setProperty('--delay', `${0.08 + i * 0.025}s`);
+      item.dataset.index = String(sectionIndex);
+      item.style.setProperty('--delay', `${0.08 + displayIdx * 0.025}s`);
 
-      // Derive label: hero/intro/footer have direct names;
-      // case-image and case-text use the tag/title.
+      // Derive label: hero/intro/footer have direct names; case-image uses tag.
       let label = '';
-      if (labels[Object.keys(labels).find(k => sec.classList.contains(k))]) {
-        label = labels[Object.keys(labels).find(k => sec.classList.contains(k))];
+      const namedKey = Object.keys(labels).find(k => sec.classList.contains(k));
+      if (namedKey) {
+        label = labels[namedKey];
       } else if (sec.classList.contains('case-image')) {
         const tag = sec.querySelector('.case-image__tag');
         if (tag) {
@@ -39,17 +48,14 @@
           clone.querySelectorAll('br').forEach(br => br.replaceWith(' '));
           label = clone.textContent.replace(/\s+/g, ' ').trim();
         } else {
-          label = `Capa ${i}`;
+          label = `Capa ${displayIdx}`;
         }
-      } else if (sec.classList.contains('case-text')) {
-        const title = sec.querySelector('.case-text__title');
-        label = title ? title.textContent.trim() : `Case ${i}`;
       } else {
-        label = `Seção ${i + 1}`;
+        label = `Seção ${displayIdx + 1}`;
       }
 
       item.innerHTML = `
-        <span class="menu__index">${String(i + 1).padStart(2, '0')}</span>
+        <span class="menu__index">${String(displayIdx + 1).padStart(2, '0')}</span>
         <span class="menu__label">${label}</span>
       `;
 
@@ -57,7 +63,7 @@
         close();
         // Slight delay so the menu close animation feels smooth before the
         // section transition begins.
-        setTimeout(() => window.OltScroll.goTo(i), 180);
+        setTimeout(() => window.OltScroll.goTo(sectionIndex), 180);
       });
 
       menuNav.appendChild(item);
@@ -69,8 +75,16 @@
   function syncActive() {
     if (!window.OltScroll) return;
     const cur = window.OltScroll.getCurrentIndex();
-    menuNav.querySelectorAll('.menu__item').forEach((el, i) => {
-      el.classList.toggle('is-active', i === cur);
+    // Each menu item carries data-index = real section index. An item is
+    // active when current section is exactly that index, OR when current is
+    // a case-text immediately after this case-image (i.e. between this
+    // item's section index and the next item's section index).
+    const items = Array.from(menuNav.querySelectorAll('.menu__item'));
+    const indices = items.map(el => parseInt(el.dataset.index, 10));
+    items.forEach((el, i) => {
+      const start = indices[i];
+      const end = i + 1 < indices.length ? indices[i + 1] : Infinity;
+      el.classList.toggle('is-active', cur >= start && cur < end);
     });
   }
 

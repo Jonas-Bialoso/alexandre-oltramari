@@ -54,6 +54,10 @@
         [...paginationEl.children].forEach((dot, i) => {
           dot.classList.toggle('is-active', i === index);
         });
+        paginationEl.style.display = pages <= 1 ? 'none' : '';
+      }
+      if (navEl) {
+        navEl.style.display = pages <= 1 ? 'none' : '';
       }
       if (prevBtn) prevBtn.toggleAttribute('disabled', index === 0);
       if (nextBtn) nextBtn.toggleAttribute('disabled', index === pages - 1);
