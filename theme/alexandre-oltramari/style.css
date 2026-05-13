@@ -1,10 +1,10 @@
 /*
 Theme Name: Alexandre Oltramari
-Theme URI: https://alexandreoltramari.com.br
+Theme URI: https://github.com/Jonas-Bialoso/alexandre-oltramari
 Author: Jonas Bialoso
 Author URI: https://github.com/Jonas-Bialoso
 Description: Tema institucional para Alexandre Oltramari — comunicação política e marketing. Single-page com scroll de cortina, cases em CPT, animações premium.
-Version: 1.0.0
+Version: 1.1.0
 Requires at least: 6.4
 Tested up to: 6.7
 Requires PHP: 8.0
@@ -12,6 +12,9 @@ License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: alexandre-oltramari
 Tags: portfolio, one-page, custom-post-type, full-width-template
+GitHub Theme URI: Jonas-Bialoso/alexandre-oltramari
+Primary Branch: theme-dist
+Release Asset: false
 */
 
 /* Estilos reais ficam em assets/css/styles.css (enfileirado via functions.php).
